@@ -5,13 +5,19 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#define VERSION "v1.0"
 #define MEMORY_SIZE 1024
-#define BREAK(a) { a; break; }
+#define BREAK(a)                                                               \
+  {                                                                            \
+    a;                                                                         \
+    break;                                                                     \
+  }
 
 int main(int argc, char const *argv[]) {
   if (argc != 2) {
     perror("No script files");
   }
+  printf("BrainFuck %s\n", VERSION);
 
   FILE *fd;
   struct stat statbuf;
@@ -34,7 +40,6 @@ int main(int argc, char const *argv[]) {
   assert(!fclose(fd));
 
   for (int i = 0; *(file + i) != '\0'; i++) {
-    // printf("%c", file[i]);
     switch (*(file + i)) {
     case '>':
       BREAK(mem_index++);
@@ -48,18 +53,16 @@ int main(int argc, char const *argv[]) {
     case '[':
       loop_stack[loop_stack_size].mem_rax = memory + mem_index;
       loop_stack[loop_stack_size].file_index = i;
-      loop_stack_size++;
-      break;
+      BREAK(loop_stack_size++);
     case ']':
       if (loop_stack_size != 0) {
         // TODO ']'
       }
       if (*(loop_stack[loop_stack_size - 1].mem_rax) != 0) {
         i = loop_stack[loop_stack_size - 1].file_index;
-      } else {
-        loop_stack_size--;
+        break;
       }
-      break;
+      BREAK(loop_stack_size--);
     case ',':
       memory[mem_index] = getchar();
       break;
@@ -67,13 +70,16 @@ int main(int argc, char const *argv[]) {
       putchar(memory[mem_index]);
       break;
     default:
-      // TODO "//", ' ', '\n', '\t'...
-      for (; file[i] == ' ' || file[i] == '\n'; i++)
+      // space: '#', ' ', '\n', '\t', '\r'
+      for (; file[i] == ' ' || file[i] == '\n' || file[i] == '\t' ||
+             file[i] == '\r';
+           i++)
         ;
-      if (file[i] == '/' && file[i + 1] == '/') {
+      if (file[i] == '#') {
         for (; file[i] != '\n'; i++)
           ;
       }
+      i--;
     }
   }
 
